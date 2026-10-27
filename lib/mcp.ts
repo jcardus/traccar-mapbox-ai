@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { createMCPClient, mcpAppClientCapabilities, type MCPClient } from "@ai-sdk/mcp";
+import {createMCPClient, mcpAppClientCapabilities, type MCPClient} from "@ai-sdk/mcp";
 
 export type McpServerId = "mapbox" | "traccar";
 
@@ -25,16 +25,15 @@ async function getClient(id: McpServerId): Promise<MCPClient | null> {
     try {
       const headers: Record<string, string> = {};
       if (token) headers["Authorization"] = `Bearer ${token}`;
-      const client = await Promise.race([
+      return await Promise.race([
         createMCPClient({
-          transport: { type: "http", url, headers },
+          transport: {type: "http", url, headers},
           capabilities: mcpAppClientCapabilities,
         }),
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("MCP connection timed out after 8s")), 8000),
+            setTimeout(() => reject(new Error("MCP connection timed out after 8s")), 8000),
         ),
       ]);
-      return client;
     } catch (error) {
       console.error(`MCP connection failed (${id})`, error);
       delete clientCache[id];

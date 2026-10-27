@@ -2,7 +2,7 @@
 import { splitMCPAppTools } from "@ai-sdk/mcp";
 import { openai } from "@ai-sdk/openai";
 import { convertToModelMessages, stepCountIs, streamText } from "ai";
-import { createMcpClients } from "../../../lib/mcp";
+import { createMcpClients } from "@/lib/mcp";
 
 export const runtime = "nodejs";
 

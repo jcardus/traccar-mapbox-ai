@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { readMCPAppResource } from "@ai-sdk/mcp";
-import { createMcpClients } from "../../../lib/mcp";
+import { createMcpClients } from "@/lib/mcp";
 
 export const runtime = "nodejs";
 
