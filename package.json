@@ -1,0 +1,17 @@
+{
+  "name": "traccar-assistant",
+  "private": true,
+  "scripts": {"dev": "next dev", "build": "next build", "start": "next start"},
+  "dependencies": {
+    "@ai-sdk/mcp": "latest",
+    "@ai-sdk/openai": "latest",
+    "@ai-sdk/react": "latest",
+    "@assistant-ui/react": "latest",
+    "@assistant-ui/react-ai-sdk": "latest",
+    "ai": "latest",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {"typescript": "latest", "@types/node": "latest", "@types/react": "latest", "@types/react-dom": "latest"}
+}
