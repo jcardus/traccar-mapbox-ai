@@ -1,27 +1,30 @@
 // @ts-nocheck
 import { createMCPClient, mcpAppClientCapabilities, type MCPClient } from "@ai-sdk/mcp";
 
-export type McpServerId = "mapbox";
+export type McpServerId = "mapbox" | "traccar";
 
-const urls: Record<McpServerId, string | undefined> = {
-  mapbox: process.env.MAPBOX_MCP_URL,
-};
+const SERVER_IDS: McpServerId[] = ["mapbox", "traccar"];
 
-const tokens: Record<McpServerId, string | undefined> = {
-  mapbox: process.env.MAPBOX_ACCESS_TOKEN,
-};
+function getServerConfig(id: McpServerId) {
+  if (id === "mapbox") {
+    return { url: process.env.MAPBOX_MCP_URL, token: process.env.MAPBOX_ACCESS_TOKEN };
+  }
+  return { url: process.env.TRACCAR_MCP_URL, token: process.env.TRACCAR_MCP_TOKEN };
+}
 
-const clientCache: Partial<Record<McpServerId, Promise<MCPClient | null>>> = {};
+const clientCache: Partial<Record<McpServerId, { key: string; promise: Promise<MCPClient | null> }>> = {};
 
 async function getClient(id: McpServerId): Promise<MCPClient | null> {
-  if (clientCache[id]) return clientCache[id]!;
-  const url = urls[id];
+  const { url, token } = getServerConfig(id);
   if (!url || url.includes("your-") || url.includes("example.com")) return null;
+
+  const key = `${url}|${token ?? ""}`;
+  if (clientCache[id]?.key === key) return clientCache[id]!.promise;
 
   const promise = (async () => {
     try {
       const headers: Record<string, string> = {};
-      if (tokens[id]) headers["Authorization"] = `Bearer ${tokens[id]}`;
+      if (token) headers["Authorization"] = `Bearer ${token}`;
       const client = await Promise.race([
         createMCPClient({
           transport: { type: "http", url, headers },
@@ -39,13 +42,13 @@ async function getClient(id: McpServerId): Promise<MCPClient | null> {
     }
   })();
 
-  clientCache[id] = promise;
+  clientCache[id] = { key, promise };
   return promise;
 }
 
 export async function createMcpClients() {
   const entries = await Promise.all(
-    (Object.keys(urls) as McpServerId[]).map(async (id) => [id, await getClient(id)] as const),
+    SERVER_IDS.map(async (id) => [id, await getClient(id)] as const),
   );
   return Object.fromEntries(entries) as Partial<Record<McpServerId, MCPClient>>;
 }

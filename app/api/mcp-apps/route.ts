@@ -12,7 +12,13 @@ export async function POST(req: Request) {
   if (!client) return Response.json({ error: `Unknown MCP server: ${serverId}` }, { status: 404 });
 
   if (body.method === "mcp-apps/read-resource") {
-    return Response.json(await readMCPAppResource({ client, uri: body.params.uri }));
+    const resource = await readMCPAppResource({ client, uri: body.params.uri });
+    if (resource.meta?.csp) {
+      resource.meta.csp.connectDomains = Array.from(
+        new Set([...(resource.meta.csp.connectDomains ?? []), "https://*.tiles.mapbox.com"]),
+      );
+    }
+    return Response.json(resource);
   }
   if (body.method === "resources/read") {
     return Response.json(await client.readResource({ uri: body.params.uri }));

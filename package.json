@@ -5,7 +5,6 @@
   "dependencies": {
     "@ai-sdk/mcp": "latest",
     "@ai-sdk/openai": "latest",
-    "@ai-sdk/react": "latest",
     "@assistant-ui/react": "latest",
     "@assistant-ui/react-ai-sdk": "latest",
     "ai": "latest",
