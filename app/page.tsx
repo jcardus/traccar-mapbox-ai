@@ -14,6 +14,7 @@ import {
   useAuiState,
 } from "@assistant-ui/react";
 import { useChatRuntime } from "@assistant-ui/react-ai-sdk";
+import { MarkdownText } from "@/components/markdown-text";
 
 const config = AuiConfig({
   tools: Tools({
@@ -139,7 +140,7 @@ function Workspace() {
                       {({ part }) => {
                         if (part.type === "text") {
                           if (!part.text) return <></>;
-                          return <p style={{ whiteSpace: "pre-line", margin: "4px 0" }}>{part.text}</p>;
+                          return <MarkdownText />;
                         }
                         if (part.type === "tool-call" && part.toolName === "render_map_tool") {
                           const isActive = part.toolCallId === activeToolCallId;

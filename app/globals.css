@@ -1,2 +1,78 @@
+@import "@assistant-ui/react-markdown/styles/dot.css";
+
 html, body { margin: 0; height: 100%; }
 * { box-sizing: border-box; }
+
+.aui-md {
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.aui-md > :first-child { margin-top: 0; }
+.aui-md > :last-child { margin-bottom: 0; }
+.aui-md p { margin: 0.4em 0; }
+.aui-md h1,
+.aui-md h2,
+.aui-md h3,
+.aui-md h4 {
+  margin: 0.75em 0 0.3em;
+  line-height: 1.25;
+}
+.aui-md h1 { font-size: 1.25em; }
+.aui-md h2 { font-size: 1.12em; }
+.aui-md h3,
+.aui-md h4 { font-size: 1em; }
+.aui-md ul,
+.aui-md ol { margin: 0.4em 0; padding-left: 1.3em; }
+.aui-md li { margin: 0.15em 0; }
+.aui-md li > p { margin: 0; }
+.aui-md a { color: #1d4ed8; }
+.aui-md blockquote {
+  margin: 0.5em 0;
+  padding-left: 0.8em;
+  border-left: 3px solid #d1d5db;
+  color: #4b5563;
+}
+.aui-md code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+}
+.aui-md code[data-inline] {
+  background: #f3f4f6;
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+.aui-md pre {
+  margin: 0.5em 0;
+  padding: 10px 12px;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 8px;
+  overflow: auto;
+}
+.aui-md pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+.aui-md table {
+  border-collapse: collapse;
+  margin: 0.5em 0;
+  width: 100%;
+  font-size: 13px;
+}
+.aui-md th,
+.aui-md td {
+  border: 1px solid #e5e7eb;
+  padding: 4px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+.aui-md th { background: #f8fafc; }
+.aui-md hr {
+  border: 0;
+  border-top: 1px solid #e5e7eb;
+  margin: 0.8em 0;
+}
+.aui-md img { max-width: 100%; height: auto; }
+.aui-md input[type="checkbox"] { margin-right: 0.35em; }
