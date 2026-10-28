@@ -29,6 +29,16 @@ const config = AuiConfig({
   }),
 });
 
+const MAP_TOOL_NAMES = new Set(["render_map_tool", "map_recorded_routes"]);
+
+function mapResultOf(part: any) {
+  return part?.result ?? part?.output;
+}
+
+function isDrawnMap(part: any) {
+  return Boolean(mapResultOf(part)?.structuredContent?.mapboxRender);
+}
+
 const INITIAL_MAP_OUTPUT = {
   structuredContent: {
     rendered: true,
@@ -50,11 +60,11 @@ function Workspace() {
     const list: { toolCallId: string; args: any; result: any }[] = [];
     for (const msg of messages ?? []) {
       for (const p of msg.parts ?? msg.content ?? []) {
-        if (p.type === "tool-call" && p.toolName === "render_map_tool" && p.result !== undefined) {
+        if (p.type === "tool-call" && MAP_TOOL_NAMES.has(p.toolName) && isDrawnMap(p)) {
           list.push({
             toolCallId: p.toolCallId,
             args: p.args,
-            result: p.result,
+            result: mapResultOf(p),
           });
         }
       }
@@ -142,8 +152,14 @@ function Workspace() {
                           if (!part.text) return <></>;
                           return <MarkdownText />;
                         }
-                        if (part.type === "tool-call" && part.toolName === "render_map_tool") {
+                        if (part.type === "tool-call" && MAP_TOOL_NAMES.has(part.toolName)) {
+                          if (!isDrawnMap(part)) {
+                            const message = mapResultOf(part)?.trace?.message;
+                            if (!message) return <></>;
+                            return <p style={{ margin: "6px 0", color: "#b91c1c", fontSize: 13 }}>{message}</p>;
+                          }
                           const isActive = part.toolCallId === activeToolCallId;
+                          const summary = part.args?.summary || mapResultOf(part)?.structuredContent?.summary || "Map updated";
                           return (
                             <button
                               type="button"
@@ -162,7 +178,7 @@ function Workspace() {
                                 cursor: "pointer",
                               }}
                             >
-                              🗺️ {part.args?.summary || "Map updated"} {isActive ? "(Showing)" : "(Show on map)"}
+                              🗺️ {summary} {isActive ? "(Showing)" : "(Show on map)"}
                             </button>
                           );
                         }

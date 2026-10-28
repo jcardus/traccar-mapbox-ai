@@ -1,13 +1,20 @@
 // @ts-nocheck
 import {createMCPClient, mcpAppClientCapabilities, type MCPClient} from "@ai-sdk/mcp";
 
-export type McpServerId = "mapbox" | "traccar";
+export type McpServerId = "mapbox" | "traccar" | "geojson";
 
-const SERVER_IDS: McpServerId[] = ["mapbox", "traccar"];
+const SERVER_IDS: McpServerId[] = ["mapbox", "traccar", "geojson"];
 
 function getServerConfig(id: McpServerId) {
   if (id === "mapbox") {
     return { url: process.env.MAPBOX_MCP_URL, token: process.env.MAPBOX_ACCESS_TOKEN };
+  }
+  if (id === "geojson") {
+    const port = process.env.PORT || "3000";
+    return {
+      url: process.env.GEOJSON_MCP_URL || `http://127.0.0.1:${port}/api/geojson-mcp`,
+      token: undefined,
+    };
   }
   return { url: process.env.TRACCAR_MCP_URL, token: process.env.TRACCAR_MCP_TOKEN };
 }
