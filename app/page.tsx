@@ -29,7 +29,7 @@ const config = AuiConfig({
   }),
 });
 
-const MAP_TOOL_NAMES = new Set(["render_map_tool", "map_recorded_routes"]);
+const MAP_TOOL_NAMES = new Set(["render_map_tool"]);
 
 function mapResultOf(part: any) {
   return part?.result ?? part?.output;
@@ -85,7 +85,6 @@ function Workspace() {
     () => mapCalls.find((c) => c.toolCallId === activeToolCallId) ?? mapCalls[mapCalls.length - 1] ?? null,
     [mapCalls, activeToolCallId],
   );
-
   const partProps = {
     type: "tool-call",
     toolCallId: "persistent-mapbox-map",
@@ -153,11 +152,7 @@ function Workspace() {
                           return <MarkdownText />;
                         }
                         if (part.type === "tool-call" && MAP_TOOL_NAMES.has(part.toolName)) {
-                          if (!isDrawnMap(part)) {
-                            const message = mapResultOf(part)?.trace?.message;
-                            if (!message) return <></>;
-                            return <p style={{ margin: "6px 0", color: "#b91c1c", fontSize: 13 }}>{message}</p>;
-                          }
+                          if (!isDrawnMap(part)) return <></>;
                           const isActive = part.toolCallId === activeToolCallId;
                           const summary = part.args?.summary || mapResultOf(part)?.structuredContent?.summary || "Map updated";
                           return (

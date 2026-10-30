@@ -2,6 +2,7 @@
   "name": "traccar-assistant",
   "private": true,
   "scripts": {
+    "postinstall": "node scripts/patch-mcp-app-csp.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start"
