@@ -3,7 +3,7 @@
 This starter wires assistant-ui to three MCP servers:
 
 - Traccar MCP for fleet data and operations.
-- GeoJSON MCP at `/api/geojson-mcp`. Its `positions_to_geojson` tool translates a positions array into GeoJSON.
+- GeoJSON MCP at `/api/geojson-mcp`. Its `positions_to_geojson` tool reads a `traccar://` positions link, or a short positions array, and draws the track. The tool result is only a trace.
 - Mapbox MCP for geospatial tools and `render_map_tool`, which returns a live MCP Apps map.
 
 ## Run

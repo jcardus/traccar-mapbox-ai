@@ -52,6 +52,16 @@ async function getClient(id: McpServerId): Promise<MCPClient | null> {
   return promise;
 }
 
+export async function readTraccarResource(uri: string): Promise<string> {
+  const client = await getClient("traccar");
+  if (!client) throw new Error("Traccar MCP is not configured.");
+  const result = await client.readResource({ uri });
+  for (const item of result?.contents ?? []) {
+    if (typeof item?.text === "string") return item.text;
+  }
+  throw new Error("Traccar returned no positions.");
+}
+
 export async function createMcpClients() {
   const entries = await Promise.all(
     SERVER_IDS.map(async (id) => [id, await getClient(id)] as const),

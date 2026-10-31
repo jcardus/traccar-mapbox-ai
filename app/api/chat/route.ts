@@ -7,6 +7,26 @@ import { createMcpClients } from "@/lib/mcp";
 
 export const runtime = "nodejs";
 
+const POSITIONS_LINK =
+  "When from or to is set, returns a summary and a traccar:// resource link instead of the positions. Pass that exact URI to positions_to_geojson as uri. Do not paste positions and do not call resources/read.";
+
+function describeTraccarTool(name: string, tool: any) {
+  if (name === "getPositions") {
+    return {
+      ...tool,
+      description: `Returns the latest position of each device as JSON. ${POSITIONS_LINK}`,
+    };
+  }
+  if (name === "getReportsRoute") {
+    return {
+      ...tool,
+      description:
+        "Returns a summary and a traccar:// resource link for the positions in the period. Pass that exact URI to positions_to_geojson as uri. Do not paste positions and do not call resources/read.",
+    };
+  }
+  return tool;
+}
+
 function stripPropertyNames(schema: any): any {
   if (!schema || typeof schema !== "object") return schema;
   if (Array.isArray(schema)) return schema.map(stripPropertyNames);
@@ -34,7 +54,7 @@ export async function POST(req: Request) {
       const tools = client.toolsFromDefinitions(cleaned);
       return Object.entries(tools).map(([name, tool]) => [
         serverId === "mapbox" || serverId === "geojson" ? name : `${serverId}_${name}`,
-        tool,
+        serverId === "traccar" ? describeTraccarTool(name, tool) : tool,
       ] as const);
     }),
   );

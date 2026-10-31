@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AssistantRuntimeProvider,
   AuiConfig,
@@ -30,14 +30,86 @@ const config = AuiConfig({
 });
 
 const MAP_TOOL_NAMES = new Set(["render_map_tool"]);
+const TRACK_TOOL_NAME = "positions_to_geojson";
 
 function mapResultOf(part: any) {
   return part?.result ?? part?.output;
 }
 
+function routeIdOf(part: any) {
+  const id = mapResultOf(part)?.structuredContent?.routeId;
+  return typeof id === "string" ? id : null;
+}
+
+function traceLabel(part: any) {
+  const trace = mapResultOf(part)?.structuredContent?.trace;
+  if (!trace) return "Recorded track";
+  const bits = [];
+  if (trace.distanceKm != null) bits.push(`${trace.distanceKm} km`);
+  if (trace.durationMinutes != null) bits.push(`${trace.durationMinutes} min`);
+  return bits.length > 0 ? bits.join(", ") : "Recorded track";
+}
+
+function mapButtonStyle(isActive: boolean) {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    margin: "6px 0",
+    padding: "6px 10px",
+    fontSize: 13,
+    borderRadius: 6,
+    border: isActive ? "1px solid #2563eb" : "1px solid #ccc",
+    background: isActive ? "#eff6ff" : "#f9fafb",
+    color: isActive ? "#1d4ed8" : "#374151",
+    cursor: "pointer",
+  };
+}
+
+async function loadTrack(id: string) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const response = await fetch(`/api/recorded-routes/${id}`);
+      if (response.status === 404) return null;
+      if (response.ok) {
+        const body = await response.json();
+        if (body?.mapboxRender) return body.mapboxRender;
+      }
+    } catch {
+    }
+    await new Promise((resolve) => setTimeout(resolve, 400));
+  }
+  return null;
+}
+
+// Hovering a message rebuilds the thread state. A new result object makes the
+// map remove the line and draw it again, which flickers as the pointer crosses
+// between the chat and the map.
+function cachedTrackResult(cache: Map<string, { payload: any; result: any }>, id: string, payload: any) {
+  const cached = cache.get(id);
+  if (cached?.payload === payload) return cached.result;
+  const result = trackMapResult(payload);
+  cache.set(id, { payload, result });
+  return result;
+}
+
+function trackMapResult(payload: any) {
+  return {
+    structuredContent: {
+      rendered: true,
+      layer_count: payload.layers?.length ?? 0,
+      marker_count: payload.markers?.length ?? 0,
+      summary: payload.summary,
+      mapboxRender: payload,
+    },
+  };
+}
+
 function isDrawnMap(part: any) {
   return Boolean(mapResultOf(part)?.structuredContent?.mapboxRender);
 }
+
+const EMPTY_ARGS = {};
 
 const INITIAL_MAP_OUTPUT = {
   structuredContent: {
@@ -55,6 +127,37 @@ function Workspace() {
   const messages = useAuiState((s: any) => s.thread.messages);
   const Render = useAuiState((s: any) => s.tools?.mcpApp?.render);
   const [selectedToolCallId, setSelectedToolCallId] = useState<string | null>(null);
+  const [tracks, setTracks] = useState<Record<string, any>>({});
+  const [missingTracks, setMissingTracks] = useState<Record<string, boolean>>({});
+  const requestedTracks = useRef(new Set<string>());
+  const trackResults = useRef(new Map());
+
+  const routeIds = useMemo(() => {
+    const ids: string[] = [];
+    for (const msg of messages ?? []) {
+      for (const p of msg.parts ?? msg.content ?? []) {
+        if (p.type === "tool-call" && p.toolName === TRACK_TOOL_NAME) {
+          const id = routeIdOf(p);
+          if (id) ids.push(id);
+        }
+      }
+    }
+    return ids;
+  }, [messages]);
+
+  useEffect(() => {
+    for (const id of routeIds) {
+      if (requestedTracks.current.has(id)) continue;
+      requestedTracks.current.add(id);
+      loadTrack(id).then((payload) => {
+        if (!payload) {
+          setMissingTracks((current) => (current[id] ? current : { ...current, [id]: true }));
+          return;
+        }
+        setTracks((current) => (current[id] ? current : { ...current, [id]: payload }));
+      });
+    }
+  }, [routeIds]);
 
   const mapCalls = useMemo(() => {
     const list: { toolCallId: string; args: any; result: any }[] = [];
@@ -67,10 +170,21 @@ function Workspace() {
             result: mapResultOf(p),
           });
         }
+        if (p.type === "tool-call" && p.toolName === TRACK_TOOL_NAME) {
+          const id = routeIdOf(p);
+          const payload = id ? tracks[id] : null;
+          if (id && payload) {
+            list.push({
+              toolCallId: `track:${id}`,
+              args: EMPTY_ARGS,
+              result: cachedTrackResult(trackResults.current, id, payload),
+            });
+          }
+        }
       }
     }
     return list;
-  }, [messages]);
+  }, [messages, tracks]);
 
   const latestMapToolCallId = mapCalls.length > 0 ? mapCalls[mapCalls.length - 1].toolCallId : null;
 
@@ -159,21 +273,27 @@ function Workspace() {
                             <button
                               type="button"
                               onClick={() => setSelectedToolCallId(part.toolCallId)}
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 6,
-                                margin: "6px 0",
-                                padding: "6px 10px",
-                                fontSize: 13,
-                                borderRadius: 6,
-                                border: isActive ? "1px solid #2563eb" : "1px solid #ccc",
-                                background: isActive ? "#eff6ff" : "#f9fafb",
-                                color: isActive ? "#1d4ed8" : "#374151",
-                                cursor: "pointer",
-                              }}
+                              style={mapButtonStyle(isActive)}
                             >
                               🗺️ {summary} {isActive ? "(Showing)" : "(Show on map)"}
+                            </button>
+                          );
+                        }
+                        if (part.type === "tool-call" && part.toolName === TRACK_TOOL_NAME) {
+                          const routeId = routeIdOf(part);
+                          if (!routeId) return <></>;
+                          const toolCallId = `track:${routeId}`;
+                          const isActive = toolCallId === activeToolCallId;
+                          const ready = Boolean(tracks[routeId]);
+                          const missing = Boolean(missingTracks[routeId]);
+                          const state = isActive ? "(Showing)" : ready ? "(Show on map)" : missing ? "(Unavailable)" : "(Drawing)";
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => ready && setSelectedToolCallId(toolCallId)}
+                              style={mapButtonStyle(isActive)}
+                            >
+                              🗺️ {traceLabel(part)} {state}
                             </button>
                           );
                         }
